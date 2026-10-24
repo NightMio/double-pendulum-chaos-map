@@ -12,8 +12,8 @@ Double-click anywhere to open that pendulum live, watch its phase portrait, and 
 
 ## Features
 
-- **OpenCL acceleration** — a 1200×1200 λ field in ~0.7 s (vs 143 s for the 20-thread CPU version)
-- **Three precision levels** — fp32 / float-float (~48 bit) / fp64, switchable at runtime
+- **OpenCL acceleration** — a 1200×1200 λ field in ≈0.7 s (vs 143 s for the 20-thread CPU version)
+- **Three precision levels** — fp32 / float-float (≈48 bit) / fp64, switchable at runtime
 - **Symmetry speed-up** — the global view computes half the pixels; the rest is mirrored through point inversion
 - **Unlimited zoom** — drag a box to recompute that region, `Z` walks back up the stack
 - **Two parameter spaces** — initial angles (−π..π)² or initial angular velocities (−25..25)²
@@ -44,7 +44,7 @@ Both start maximized and begin computing immediately.
 | Right-drag | Pan |
 | Precision / Duration | Samples per side (64–16384) and evolution time (0.5–4000 s) |
 | Single / High / Double | fp32 / float-float / fp64 |
-| Fast | fast-math kernel, ~3.7× faster |
+| Fast | fast-math kernel, ≈3.7× faster |
 | Sharpness | Exponent of the λ→colour mapping |
 | Save PNG | 1:1 render to the Desktop |
 | Advanced | Mass, length, gravity, initial state, parameter space |
@@ -81,7 +81,7 @@ num₂ = 2·sin(θ₁−θ₂)·(ω₁²·L₁·(m₁+m₂) + g·(m₁+m₂)·co
 
 **Symmetry acceleration** — the equations are invariant under `(θ₁,θ₂) → (−θ₁,−θ₂)`, so the λ field is point-symmetric. The global view computes the left half and mirrors; zoomed views lose the symmetry and compute everything.
 
-**Precision modes** — in angular-velocity space, |ω| reaches 25 rad/s, so fp32 round-off (~1e-7 per step) accumulates to the same order as d₀ and the numerical noise is mistaken for chaos, inflating λ by 200× or more. float-float (hi/lo pair) keeps ~48 bits and is 7–9× faster than fp64.
+**Precision modes** — in angular-velocity space, |ω| reaches 25 rad/s, so fp32 round-off (≈1e-7 per step) accumulates to the same order as d₀ and the numerical noise is mistaken for chaos, inflating λ by 200× or more. float-float (hi/lo pair) keeps ≈48 bits and is 7–9× faster than fp64.
 
 **Audio** — θ(t) is time-compressed 440× into an audio signal. The demo pendulum stays real-time while a separate thread integrates the same initial condition 440× faster into a ring buffer, read back 1:1, so it never repeats.
 
@@ -91,7 +91,7 @@ num₂ = 2·sin(θ₁−θ₂)·(ω₁²·L₁·(m₁+m₂) + g·(m₁+m₂)·co
 |---|---|
 | fp32 + fast-math | 0.19 s |
 | fp32 | 0.72 s |
-| float-float | ~4 s (40 s at 4096²) |
+| float-float | ≈4 s (40 s at 4096²) |
 | fp64 | 37.2 s |
 | 4096² fp32 | 7 s |
 
@@ -117,7 +117,7 @@ gcc -O2 -march=native -mno-avx -mno-avx2 -fopenmp -municode -DAPP_EN \
 - fp32 badly overestimates λ in angular-velocity space; use High or Double there
 - Zooming below the fp32 ulp (≈1.2e-7 near θ≈1.5) quantises the field into flat blocks
 - fp64 is throttled by the Windows TDR timeout, so submissions are limited to 8 rows per batch
-- RK4 is a non-symplectic fixed-step integrator; energy drifts down slowly (~2e-5 relative over 60 s at h=0.001)
+- RK4 is a non-symplectic fixed-step integrator; energy drifts down slowly (≈2e-5 relative over 60 s at h=0.001)
 - OGG export needs ffmpeg; WAV is used otherwise
 
 ## License
