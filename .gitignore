@@ -1,0 +1,31 @@
+# 构建产物
+*.exe
+*.o
+*.obj
+*.dll
+
+# 运行日志
+chaosmap_log.txt
+ui_log.txt
+
+# 导出的媒体与图片
+*.wav
+*.ogg
+*.bmp
+*.bin
+
+# 开发期的截图与临时文件
+shot*.png
+pend*.png
+adv*.png
+screen.png
+prec*.png
+fast_*.png
+mir_*.png
+compare*.png
+
+# 编辑器
+.vs/
+.vscode/
+*.swp
+*~
