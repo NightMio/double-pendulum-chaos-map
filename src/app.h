@@ -123,6 +123,13 @@ typedef struct {
 
 /* 双摆窗口入口 */
 void open_pendulum_window(double th1, double th2);
+/* 界面字符串：默认中文；用 -DAPP_EN 编译出英文版 */
+#ifdef APP_EN
+#  define UI(zh, en) en
+#else
+#  define UI(zh, en) zh
+#endif
+
 extern const WCHAR *PEND_CLASS;
 LRESULT CALLBACK PendWndProc(HWND, UINT, WPARAM, LPARAM);
 

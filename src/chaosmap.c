@@ -172,7 +172,7 @@ static const WCHAR *g_helpText =
     L"  P           播放 / 停止声音\n"
     L"  M           切换声频模式\n"
     L"  [ ]         调整加速倍率 / 音高\n"
-    L"  T           导出当前轨迹图到桌面";
+    UI(L"  T           导出当前轨迹图到桌面", L"  T           Export trajectory to Desktop");
 
 
 
@@ -515,7 +515,7 @@ static void start_job(void)
     {
         WCHAR b[160];
         double est = estimate_seconds(g_cur.W, g_cur.H, g_cur.T, g_precision);
-        swprintf(b, 160, L"预计 %.1f s · 计算中 0%%", est);
+        swprintf(b, 160, UI(L"预计 %.1f s · 计算中 0%%", L"Est. %.1f s - computing 0%%"), est);
         SetWindowTextW(g_status, b);
     }
     g_thread = CreateThread(NULL, 0, compute_proc, &g_cur, 0, NULL);
@@ -581,14 +581,14 @@ static int save_png_rgb(const WCHAR *path, int w, int h, const unsigned char *rg
 static void save_snapshot(HWND hwnd)
 {
     if (g_computing || !g_cur.lambda) {
-        MessageBoxW(hwnd, L"当前还没有算完的图像，等计算结束再保存。",
-                    L"提示", MB_OK | MB_ICONINFORMATION);
+        MessageBoxW(hwnd, UI(L"当前还没有算完的图像，等计算结束再保存。", L"Nothing rendered yet, wait for completion."),
+                    UI(L"提示", L"Notice"), MB_OK | MB_ICONINFORMATION);
         return;
     }
     const int W = g_cur.W, H = g_cur.H;
     const size_t n = (size_t)W * H;
     unsigned char *rgb = (unsigned char *)malloc(n * 3);
-    if (!rgb) { MessageBoxW(hwnd, L"内存不足，无法生成图片。", L"错误", MB_OK | MB_ICONERROR); return; }
+    if (!rgb) { MessageBoxW(hwnd, UI(L"内存不足，无法生成图片。", L"Out of memory, cannot create image."), UI(L"错误", L"Error"), MB_OK | MB_ICONERROR); return; }
     for (size_t k = 0; k < n; ++k) {
         BYTE r, g, b;
         lambda_to_rgb(g_cur.lambda[k], VMAP_HI, VMAP_GAMMA, &r, &g, &b);
@@ -605,13 +605,13 @@ static void save_snapshot(HWND hwnd)
              desk, W, H, st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
     if (save_png_rgb(path, W, H, rgb) != 0) {
         free(rgb);
-        MessageBoxW(hwnd, L"PNG 编码失败。", L"错误", MB_OK | MB_ICONERROR);
+        MessageBoxW(hwnd, UI(L"PNG 编码失败。", L"PNG encoding failed."), UI(L"错误", L"Error"), MB_OK | MB_ICONERROR);
         return;
     }
     free(rgb);
     WCHAR msg[MAX_PATH + 80];
     swprintf(msg, MAX_PATH + 80, L"已保存 %d×%d（每个像素一个双摆）：\n%s", W, H, path);
-    MessageBoxW(hwnd, msg, L"截图已保存", MB_OK | MB_ICONINFORMATION);
+    MessageBoxW(hwnd, msg, UI(L"截图已保存", L"Saved"), MB_OK | MB_ICONINFORMATION);
 }
 
 /* ================= 导出轨迹图（PNG，左图右参数） ================= */
@@ -621,7 +621,7 @@ static void export_trajectory(HWND owner, double th1, double th2, double w1, dou
     const int NS = (int)(TT / SAMPLE + 0.5) + 1;
     double *px = (double *)malloc(sizeof(double) * (size_t)NS);
     double *py = (double *)malloc(sizeof(double) * (size_t)NS);
-    if (!px || !py) { free(px); free(py); MessageBoxW(owner, L"内存不足", L"错误", MB_OK); return; }
+    if (!px || !py) { free(px); free(py); MessageBoxW(owner, UI(L"内存不足", L"Out of memory"), UI(L"错误", L"Error"), MB_OK); return; }
 
     State s;
     s.th1 = th1; s.w1 = w1; s.th2 = th2; s.w2 = w2;
@@ -666,7 +666,7 @@ static void export_trajectory(HWND owner, double th1, double th2, double w1, dou
         if (oldbm) SelectObject(mem, oldbm);
         DeleteDC(mem);
         free(px); free(py);
-        MessageBoxW(owner, L"创建位图失败", L"错误", MB_OK);
+        MessageBoxW(owner, UI(L"创建位图失败", L"Bitmap creation failed"), UI(L"错误", L"Error"), MB_OK);
         return;
     }
 
@@ -770,13 +770,13 @@ static void export_trajectory(HWND owner, double th1, double th2, double w1, dou
 
     const int RX = 1130;
     HFONT fT = CreateFontW(22, 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET,
-                           0, 0, CLEARTYPE_QUALITY, 0, L"微软雅黑");
+                           0, 0, CLEARTYPE_QUALITY, 0, UI(L"微软雅黑", L"Segoe UI"));
     HFONT fM = CreateFontW(15, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET,
                            0, 0, CLEARTYPE_QUALITY, 0, L"Consolas");
     SetBkMode(mem, TRANSPARENT);
     SetTextColor(mem, RGB(120, 200, 255));
     HGDIOBJ of = SelectObject(mem, fT);
-    TextOutW(mem, RX, 34, L"双摆轨迹", 4);
+    TextOutW(mem, RX, 34, UI(L"双摆轨迹", L"Double pendulum trajectory"), 4);
     SetTextColor(mem, RGB(110, 130, 160));
     SelectObject(mem, fM);
     TextOutW(mem, RX, 64, L"t = 0 ~ 60 s", 12);
@@ -784,7 +784,7 @@ static void export_trajectory(HWND owner, double th1, double th2, double w1, dou
     WCHAR buf[2048];
     int y = 110;
     SetTextColor(mem, RGB(90, 110, 140));
-    TextOutW(mem, RX, y, L"-- 初始状态 (t=0) --", (int)wcslen(L"-- 初始状态 (t=0) --")); y += 24;
+    TextOutW(mem, RX, y, UI(L"-- 初始状态 (t=0) --", L"-- Initial state (t=0) --"), (int)wcslen(UI(L"-- 初始状态 (t=0) --", L"-- Initial state (t=0) --"))); y += 24;
     SetTextColor(mem, RGB(210, 225, 245));
     swprintf(buf, 2048, L"th1 = %+.12f", th1); TextOutW(mem, RX, y, buf, (int)wcslen(buf)); y += 20;
     swprintf(buf, 2048, L"th2 = %+.12f", th2); TextOutW(mem, RX, y, buf, (int)wcslen(buf)); y += 20;
@@ -792,7 +792,7 @@ static void export_trajectory(HWND owner, double th1, double th2, double w1, dou
     swprintf(buf, 2048, L"w2  = %+.12f", w2);  TextOutW(mem, RX, y, buf, (int)wcslen(buf)); y += 30;
 
     SetTextColor(mem, RGB(90, 110, 140));
-    TextOutW(mem, RX, y, L"-- 物理参数 --", (int)wcslen(L"-- 物理参数 --")); y += 24;
+    TextOutW(mem, RX, y, UI(L"-- 物理参数 --", L"-- Physical parameters --"), (int)wcslen(UI(L"-- 物理参数 --", L"-- Physical parameters --"))); y += 24;
     SetTextColor(mem, RGB(210, 225, 245));
     swprintf(buf, 2048, L"m1 = %.12f", g_phys.m1); TextOutW(mem, RX, y, buf, (int)wcslen(buf)); y += 20;
     swprintf(buf, 2048, L"m2 = %.12f", g_phys.m2); TextOutW(mem, RX, y, buf, (int)wcslen(buf)); y += 20;
@@ -801,7 +801,7 @@ static void export_trajectory(HWND owner, double th1, double th2, double w1, dou
     swprintf(buf, 2048, L"g  = %.12f", g_phys.g);  TextOutW(mem, RX, y, buf, (int)wcslen(buf)); y += 30;
 
     SetTextColor(mem, RGB(90, 110, 140));
-    TextOutW(mem, RX, y, L"-- 积分设置 --", (int)wcslen(L"-- 积分设置 --")); y += 24;
+    TextOutW(mem, RX, y, UI(L"-- 积分设置 --", L"-- Integration --"), (int)wcslen(UI(L"-- 积分设置 --", L"-- Integration --"))); y += 24;
     SetTextColor(mem, RGB(210, 225, 245));
     TextOutW(mem, RX, y, L"RK4, fixed step", (int)wcslen(L"RK4, fixed step")); y += 20;
     swprintf(buf, 2048, L"h    = %.12f", HSTEP);  TextOutW(mem, RX, y, buf, (int)wcslen(buf)); y += 20;
@@ -812,17 +812,17 @@ static void export_trajectory(HWND owner, double th1, double th2, double w1, dou
     SetTextColor(mem, RGB(90, 110, 140));
     y += 12;
     SetTextColor(mem, RGB(120, 200, 255));
-    TextOutW(mem, RX, y, L"-- 图上标记 --", (int)wcslen(L"-- 图上标记 --")); y += 24;
+    TextOutW(mem, RX, y, UI(L"-- 图上标记 --", L"-- Markers --"), (int)wcslen(UI(L"-- 图上标记 --", L"-- Markers --"))); y += 24;
     SetTextColor(mem, RGB(235, 60, 60));
-    TextOutW(mem, RX, y, L"● 红点：t=0 的末端位置", (int)wcslen(L"● 红点：t=0 的末端位置")); y += 22;
+    TextOutW(mem, RX, y, UI(L"● 红点：t=0 的末端位置", L"o red dot: tip position at t=0"), (int)wcslen(UI(L"● 红点：t=0 的末端位置", L"o red dot: tip position at t=0"))); y += 22;
     SetTextColor(mem, RGB(60, 220, 110));
-    TextOutW(mem, RX, y, L"● 绿点：t=60s 的末端位置", (int)wcslen(L"● 绿点：t=60s 的末端位置")); y += 22;
+    TextOutW(mem, RX, y, UI(L"● 绿点：t=60s 的末端位置", L"o green dot: tip position at t=60s"), (int)wcslen(UI(L"● 绿点：t=60s 的末端位置", L"o green dot: tip position at t=60s"))); y += 22;
     SetTextColor(mem, RGB(235, 60, 60));
-    TextOutW(mem, RX, y, L"→ 红箭头：t=0 末端速度方向", (int)wcslen(L"→ 红箭头：t=0 末端速度方向")); y += 22;
+    TextOutW(mem, RX, y, UI(L"→ 红箭头：t=0 末端速度方向", L"-> red: tip velocity at t=0"), (int)wcslen(UI(L"→ 红箭头：t=0 末端速度方向", L"-> red: tip velocity at t=0"))); y += 22;
     SetTextColor(mem, RGB(60, 220, 110));
-    TextOutW(mem, RX, y, L"→ 绿箭头：t=60s 末端速度方向", (int)wcslen(L"→ 绿箭头：t=60s 末端速度方向")); y += 22;
+    TextOutW(mem, RX, y, UI(L"→ 绿箭头：t=60s 末端速度方向", L"-> green: tip velocity at t=60s"), (int)wcslen(UI(L"→ 绿箭头：t=60s 末端速度方向", L"-> green: tip velocity at t=60s"))); y += 22;
     SetTextColor(mem, RGB(110, 130, 160));
-    TextOutW(mem, RX, y, L"-- 能量 --", (int)wcslen(L"-- 能量 --")); y += 24;
+    TextOutW(mem, RX, y, UI(L"-- 能量 --", L"-- Energy --"), (int)wcslen(UI(L"-- 能量 --", L"-- Energy --"))); y += 24;
     SetTextColor(mem, RGB(210, 225, 245));
     swprintf(buf, 2048, L"E(0)  = %.12f", e0); TextOutW(mem, RX, y, buf, (int)wcslen(buf)); y += 20;
     swprintf(buf, 2048, L"E(60) = %.12f", e1); TextOutW(mem, RX, y, buf, (int)wcslen(buf)); y += 20;
@@ -854,9 +854,9 @@ static void export_trajectory(HWND owner, double th1, double th2, double w1, dou
         if (save_png_rgb(path, CW, CH, rgb) == 0) {
             WCHAR msg[MAX_PATH + 120];
             swprintf(msg, MAX_PATH + 120, L"Trajectory saved:\n%s", path);
-            MessageBoxW(owner, msg, L"导出成功", MB_OK | MB_ICONINFORMATION);
+            MessageBoxW(owner, msg, UI(L"导出成功", L"Export done"), MB_OK | MB_ICONINFORMATION);
         } else {
-            MessageBoxW(owner, L"PNG 编码失败。", L"错误", MB_OK | MB_ICONERROR);
+            MessageBoxW(owner, UI(L"PNG 编码失败。", L"PNG encoding failed."), UI(L"错误", L"Error"), MB_OK | MB_ICONERROR);
         }
         free(rgb);
     }
@@ -951,11 +951,11 @@ static int parse_params(int *res, double *time, WCHAR *err, int errn)
     long v = wcstol(buf, &end, 10);
     while (end && *end == L' ') ++end;
     if (end == buf || (end && *end)) {
-        wcsncpy(err, L"精度请填写整数（64 ~ 16384）", (size_t)errn);
+        wcsncpy(err, UI(L"精度请填写整数（64 ~ 16384）", L"Precision must be an integer (64-16384)"), (size_t)errn);
         return -1;
     }
     if (v < 64 || v > 16384) {
-        wcsncpy(err, L"精度范围 64 ~ 16384", (size_t)errn);
+        wcsncpy(err, UI(L"精度范围 64 ~ 16384", L"Precision must be 64 - 16384"), (size_t)errn);
         return -1;
     }
 
@@ -963,11 +963,11 @@ static int parse_params(int *res, double *time, WCHAR *err, int errn)
     double t = wcstod(buf, &end);
     while (end && *end == L' ') ++end;
     if (end == buf || (end && *end)) {
-        wcsncpy(err, L"时长请填写数字（0.5 ~ 4000 秒）", (size_t)errn);
+        wcsncpy(err, UI(L"时长请填写数字（0.5 ~ 4000 秒）", L"Duration must be a number (0.5-4000)"), (size_t)errn);
         return -1;
     }
     if (!(t >= 0.5) || t > 4000.0) {
-        wcsncpy(err, L"时长范围 0.5 ~ 4000 秒", (size_t)errn);
+        wcsncpy(err, UI(L"时长范围 0.5 ~ 4000 秒", L"Duration must be 0.5 - 4000 s"), (size_t)errn);
         return -1;
     }
 
@@ -1027,7 +1027,7 @@ static void resimulate_current(void)
     int res; double T;
     WCHAR err[128] = { 0 };
     if (parse_params(&res, &T, err, 128) != 0) {
-        MessageBoxW(g_main, err, L"参数无效", MB_OK | MB_ICONWARNING);
+        MessageBoxW(g_main, err, UI(L"参数无效", L"Invalid value"), MB_OK | MB_ICONWARNING);
         return;
     }
     g_res = res;
@@ -1082,7 +1082,7 @@ static void zoom_back(void)
     InvalidateRect(g_main, NULL, FALSE);
 
     WCHAR buf[128];
-    swprintf(buf, 128, L"已返回上一视图（剩余 %d 层）", g_sp);
+    swprintf(buf, 128, UI(L"已返回上一视图（剩余 %d 层）", L"Back to previous view (%d left)"), g_sp);
     SetWindowTextW(g_status, buf);
 }
 
@@ -1100,7 +1100,7 @@ static void update_progress(int done, int total)
     SendMessageW(g_prog, PBM_SETPOS, pct, 0);
     WCHAR buf[128];
     double el = (now - g_startTick) / 1000.0;
-    swprintf(buf, 128, L"计算中 %d%%  (%.1f s)", pct, el);
+    swprintf(buf, 128, UI(L"计算中 %d%%  (%.1f s)", L"Computing %d%%  (%.1f s)"), pct, el);
     SetWindowTextW(g_status, buf);
 }
 
@@ -1201,36 +1201,36 @@ static void create_controls(HWND hwnd)
                          CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE,
                          L"Microsoft YaHei UI");
 
-    HWND lbl1 = CreateWindowW(L"STATIC", L"精度", WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE,
+    HWND lbl1 = CreateWindowW(L"STATIC", UI(L"精度", L"Prec."), WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE,
                               10, 10, 44, 22, hwnd, NULL, NULL, NULL);
     g_edRes = CreateWindowW(L"EDIT", L"4096",
                             WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL | ES_CENTER,
                             58, 20, 90, 24, hwnd, (HMENU)IDC_RES, NULL, NULL);
     SendMessageW(g_edRes, EM_SETLIMITTEXT, 8, 0);
 
-    HWND lbl2 = CreateWindowW(L"STATIC", L"时长", WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE,
+    HWND lbl2 = CreateWindowW(L"STATIC", UI(L"时长", L"Dur."), WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE,
                               146, 10, 50, 22, hwnd, NULL, NULL, NULL);
     g_edTime = CreateWindowW(L"EDIT", L"30",
                              WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL | ES_CENTER,
                              218, 20, 90, 24, hwnd, (HMENU)IDC_TIME, NULL, NULL);
     SendMessageW(g_edTime, EM_SETLIMITTEXT, 12, 0);
 
-    g_btnApply = CreateWindowW(L"BUTTON", L"重新模拟",
+    g_btnApply = CreateWindowW(L"BUTTON", UI(L"重新模拟", L"Recompute"),
                                WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
                                320, 16, 100, 30, hwnd, (HMENU)IDC_APPLY, NULL, NULL);
 
-    g_rb32 = CreateWindowW(L"BUTTON", L"单精度",
+    g_rb32 = CreateWindowW(L"BUTTON", UI(L"单精度", L"Single"),
                            WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON | WS_GROUP,
                            416, 20, 80, 24, hwnd, (HMENU)IDC_PREC32, NULL, NULL);
-    g_rbFF = CreateWindowW(L"BUTTON", L"高精度",
+    g_rbFF = CreateWindowW(L"BUTTON", UI(L"高精度", L"High"),
                            WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
                            500, 20, 80, 24, hwnd, (HMENU)IDC_PRECFF, NULL, NULL);
-    g_rbD = CreateWindowW(L"BUTTON", L"双精度",
+    g_rbD = CreateWindowW(L"BUTTON", UI(L"双精度", L"Double"),
                           WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
                           584, 20, 80, 24, hwnd, (HMENU)IDC_PRECD, NULL, NULL);
     SendMessageW(g_rbFF, BM_SETCHECK, BST_CHECKED, 0);
 
-    g_chkFast = CreateWindowW(L"BUTTON", L"快速模式",
+    g_chkFast = CreateWindowW(L"BUTTON", UI(L"快速模式", L"Fast"),
                               WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
                               668, 20, 88, 24, hwnd, (HMENU)IDC_FAST, NULL, NULL);
 
@@ -1240,29 +1240,29 @@ static void create_controls(HWND hwnd)
                             DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                             CLEARTYPE_QUALITY, DEFAULT_PITCH, L"Microsoft YaHei UI");
 
-    g_btnZoomIn = CreateWindowW(L"BUTTON", L"放大 +",
+    g_btnZoomIn = CreateWindowW(L"BUTTON", UI(L"放大 +", L"Zoom +"),
                                 WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
                                 206, 54, 76, 30, hwnd, (HMENU)IDC_ZOOMIN, NULL, NULL);
-    g_btnZoomOut = CreateWindowW(L"BUTTON", L"缩小 -",
+    g_btnZoomOut = CreateWindowW(L"BUTTON", UI(L"缩小 -", L"Zoom -"),
                                  WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
                                  290, 54, 76, 30, hwnd, (HMENU)IDC_ZOOMOUT, NULL, NULL);
-    g_btnZoomRst = CreateWindowW(L"BUTTON", L"复位 1:1",
+    g_btnZoomRst = CreateWindowW(L"BUTTON", UI(L"复位 1:1", L"Reset 1:1"),
                                  WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
                                  374, 54, 90, 30, hwnd, (HMENU)IDC_ZOOMRST, NULL, NULL);
-    g_btnHelp = CreateWindowW(L"BUTTON", L"使用说明",
+    g_btnHelp = CreateWindowW(L"BUTTON", UI(L"使用说明", L"Help"),
                               WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
                               472, 54, 90, 30, hwnd, (HMENU)IDC_HELPBOX, NULL, NULL);
 
-    g_btnAdv = CreateWindowW(L"BUTTON", L"高级选项",
+    g_btnAdv = CreateWindowW(L"BUTTON", UI(L"高级选项", L"Advanced"),
                              WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_OWNERDRAW,
                              854, 16, 80, 30, hwnd, (HMENU)IDC_ADV, NULL, NULL);
-    CreateWindowW(L"STATIC", L"锐度", WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE,
+    CreateWindowW(L"STATIC", UI(L"锐度", L"Sharp"), WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE,
                   740, 10, 44, 22, hwnd, NULL, NULL, NULL);
     g_edSharp = CreateWindowW(L"EDIT", L"1.0",
                               WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL | ES_CENTER,
                               794, 8, 64, 28, hwnd, (HMENU)IDC_SHARP, NULL, NULL);
 
-    g_btnSnap = CreateWindowW(L"BUTTON", L"保存图片",
+    g_btnSnap = CreateWindowW(L"BUTTON", UI(L"保存图片", L"Save PNG"),
                               WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
                               760, 16, 86, 30, hwnd, (HMENU)IDC_SNAP, NULL, NULL);
 
@@ -1270,7 +1270,7 @@ static void create_controls(HWND hwnd)
                            684, 20, 240, 22, hwnd, (HMENU)IDC_PROG, NULL, NULL);
     SendMessageW(g_prog, PBM_SETRANGE, 0, MAKELPARAM(0, 100));
 
-    g_status = CreateWindowW(L"STATIC", L"就绪", WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE,
+    g_status = CreateWindowW(L"STATIC", UI(L"就绪", L"Ready"), WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE,
                              944, 22, 220, 22, hwnd, (HMENU)IDC_STATUS, NULL, NULL);
 
     HWND *ctrls[] = { &g_edRes, &g_edTime, &g_btnApply, &g_rb32, &g_rbFF, &g_rbD,
@@ -1302,19 +1302,19 @@ static HWND g_advRb[2];
 static int  g_advSpace = 0;   /* 窗口内选择的空间，点“确定”后才生效 */
 
 static const WCHAR *ADV_LABEL[7] = {
-    L"第一摆质量 m1", L"第二摆质量 m2",
-    L"第一摆长度 L1", L"第二摆长度 L2",
-    L"重力加速度 g",
-    L"第一摆初始角速度 ω1", L"第二摆初始角速度 ω2"
+    UI(L"第一摆质量 m1", L"Pendulum 1 mass m1"), UI(L"第二摆质量 m2", L"Pendulum 2 mass m2"),
+    UI(L"第一摆长度 L1", L"Pendulum 1 length L1"), UI(L"第二摆长度 L2", L"Pendulum 2 length L2"),
+    UI(L"重力加速度 g", L"Gravity g"),
+    UI(L"第一摆初始角速度 ω1", L"Pendulum 1 ang.vel"), UI(L"第二摆初始角速度 ω2", L"Pendulum 2 ang.vel")
 };
 
 static void adv_set_labels(void)
 {
     int sp = g_advSpace;
-    if (g_advLb[5]) SetWindowTextW(g_advLb[5], sp ? L"第一摆初始角度 θ1"
-                                                  : L"第一摆初始角速度 ω1");
-    if (g_advLb[6]) SetWindowTextW(g_advLb[6], sp ? L"第二摆初始角度 θ2"
-                                                  : L"第二摆初始角速度 ω2");
+    if (g_advLb[5]) SetWindowTextW(g_advLb[5], sp ? UI(L"第一摆初始角度 θ1", L"Pendulum 1 angle")
+                                                  : UI(L"第一摆初始角速度 ω1", L"Pendulum 1 ang.vel"));
+    if (g_advLb[6]) SetWindowTextW(g_advLb[6], sp ? UI(L"第二摆初始角度 θ2", L"Pendulum 2 angle")
+                                                  : UI(L"第二摆初始角速度 ω2", L"Pendulum 2 ang.vel"));
 }
 
 static void adv_set_values(void)
@@ -1430,25 +1430,25 @@ static LRESULT CALLBACK AdvProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                                        222, y, 120, 26, hwnd,
                                        (HMENU)(INT_PTR)ids[i], NULL, NULL);
         }
-        CreateWindowW(L"STATIC", L"参数空间", WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE,
+        CreateWindowW(L"STATIC", UI(L"参数空间", L"Space"), WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE,
                       16, 246, 200, 22, hwnd, NULL, NULL, NULL);
-        g_advRb[0] = CreateWindowW(L"BUTTON", L"角度空间",
+        g_advRb[0] = CreateWindowW(L"BUTTON", UI(L"角度空间", L"Angle"),
                                    WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
                                    222, 244, 120, 24, hwnd, (HMENU)IDC_ADV_SP0, NULL, NULL);
-        g_advRb[1] = CreateWindowW(L"BUTTON", L"角动量空间",
+        g_advRb[1] = CreateWindowW(L"BUTTON", UI(L"角动量空间", L"Ang. velocity"),
                                    WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
                                    222, 272, 120, 24, hwnd, (HMENU)IDC_ADV_SP1, NULL, NULL);
         CreateWindowW(L"STATIC",
-                      L"角度空间：横纵轴是两摆的初始角度（-π~π），初始角速度取下面两格。 "
-                      L"角动量空间：横纵轴是初始角速度（-25~25），初始角度取下面两格（默认 0，即竖直向下）。 "
-                      L"角速度可为负，负表示顺时针。",
+                      UI(L"角度空间：横纵轴是两摆的初始角度（-π~π），初始角速度取下面两格。 ", L"Angle space: axes are initial angles (-pi..pi); initial ang. velocities from the two fields below. ")
+                      UI(L"角动量空间：横纵轴是初始角速度（-25~25），初始角度取下面两格（默认 0，即竖直向下）。 ", L"Angular-velocity space: axes are initial ang. velocities (-25..25); initial angles from the two fields below (default 0 = hanging down). ")
+                      UI(L"角速度可为负，负表示顺时针。", L"Negative = clockwise."),
                       WS_CHILD | WS_VISIBLE,
                       16, 304, 508, 74, hwnd, NULL, NULL, NULL);
-        CreateWindowW(L"BUTTON", L"确定", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
+        CreateWindowW(L"BUTTON", UI(L"确定", L"OK"), WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
                       168, 384, 90, 32, hwnd, (HMENU)IDC_ADV_OK, NULL, NULL);
-        CreateWindowW(L"BUTTON", L"恢复默认", WS_CHILD | WS_VISIBLE,
+        CreateWindowW(L"BUTTON", UI(L"恢复默认", L"Defaults"), WS_CHILD | WS_VISIBLE,
                       270, 384, 100, 32, hwnd, (HMENU)IDC_ADV_DEF, NULL, NULL);
-        CreateWindowW(L"BUTTON", L"取消", WS_CHILD | WS_VISIBLE,
+        CreateWindowW(L"BUTTON", UI(L"取消", L"Cancel"), WS_CHILD | WS_VISIBLE,
                       382, 384, 90, 32, hwnd, (HMENU)IDC_ADV_CANCEL, NULL, NULL);
         adv_set_values();
         return 0;
@@ -1476,8 +1476,8 @@ static LRESULT CALLBACK AdvProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         case IDC_ADV_OK: {
             double v[7];
             if (adv_read_values(v) != 0) {
-                MessageBoxW(hwnd, L"请输入有效数字：质量、长度必须为正，重力不能为 0。",
-                            L"参数无效", MB_OK | MB_ICONWARNING);
+                MessageBoxW(hwnd, UI(L"请输入有效数字：质量、长度必须为正，重力不能为 0。", L"Invalid numbers: mass/length must be > 0, gravity != 0."),
+                            UI(L"参数无效", L"Invalid value"), MB_OK | MB_ICONWARNING);
                 return 0;
             }
             int oldspace = g_phys.space;
@@ -1538,7 +1538,7 @@ static void open_advanced(HWND owner)
         SetForegroundWindow(g_adv);
         return;
     }
-    g_adv = CreateWindowExW(0, ADV_CLASS, L"高级选项",
+    g_adv = CreateWindowExW(0, ADV_CLASS, UI(L"高级选项", L"Advanced"),
                             WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
                             CW_USEDEFAULT, CW_USEDEFAULT, 560, 470,
                             owner, NULL, GetModuleHandleW(NULL), NULL);
@@ -1615,8 +1615,8 @@ static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
                     LOWORD(wParam) == IDC_PRECD) && HIWORD(wParam) == BN_CLICKED) {
             int want = (LOWORD(wParam) == IDC_PRECFF) ? 1 : (LOWORD(wParam) == IDC_PRECD) ? 2 : 0;
             if (want == 2 && !gpu_has_double()) {
-                MessageBoxW(hwnd, L"当前设备不支持双精度（cl_khr_fp64）。",
-                            L"提示", MB_OK | MB_ICONINFORMATION);
+                MessageBoxW(hwnd, UI(L"当前设备不支持双精度（cl_khr_fp64）。", L"Device does not support fp64 (cl_khr_fp64)."),
+                            UI(L"提示", L"Notice"), MB_OK | MB_ICONINFORMATION);
                 SendMessageW(g_rb32, BM_SETCHECK, BST_CHECKED, 0);
                 want = 0;
             }
@@ -1635,7 +1635,7 @@ static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
             g_zoom = 1.0; g_zoomCX = 0.5; g_zoomCY = 0.5;
             InvalidateRect(hwnd, NULL, FALSE);
         } else if (LOWORD(wParam) == IDC_HELPBOX && HIWORD(wParam) == BN_CLICKED) {
-            MessageBoxW(hwnd, g_helpText, L"使用说明", MB_OK | MB_ICONINFORMATION);
+            MessageBoxW(hwnd, g_helpText, UI(L"使用说明", L"Help"), MB_OK | MB_ICONINFORMATION);
         } else if (LOWORD(wParam) == IDC_SNAP && HIWORD(wParam) == BN_CLICKED) {
             save_snapshot(hwnd);
         } else if (LOWORD(wParam) == IDC_FAST && HIWORD(wParam) == BN_CLICKED) {
@@ -1643,8 +1643,8 @@ static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
             /* 重建内核前必须让计算线程彻底停下 */
             if (g_computing) stop_job();
             if (gpu_set_fast(on) != 0) {
-                MessageBoxW(hwnd, L"切换快速模式失败（内核重建出错）。",
-                            L"提示", MB_OK | MB_ICONWARNING);
+                MessageBoxW(hwnd, UI(L"切换快速模式失败（内核重建出错）。", L"Failed to switch fast mode (kernel rebuild error)."),
+                            UI(L"提示", L"Notice"), MB_OK | MB_ICONWARNING);
                 SendMessageW(g_chkFast, BM_SETCHECK,
                              gpu_is_fast() ? BST_CHECKED : BST_UNCHECKED, 0);
             }
@@ -1754,9 +1754,9 @@ static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
                 screen_to_sim(mx, my, &th1, &th2);
                 WCHAR t[200];
                 if (g_phys.space == 0)
-                    swprintf(t, 200, L"θ1 = %.12f     θ2 = %.12f", th1, th2);
+                    swprintf(t, 200, UI(L"θ1 = %.12f     θ2 = %.12f", L"theta1 = %.12f   theta2 = %.12f"), th1, th2);
                 else
-                    swprintf(t, 200, L"ω1 = %.12f     ω2 = %.12f", th1, th2);
+                    swprintf(t, 200, UI(L"ω1 = %.12f     ω2 = %.12f", L"omega1 = %.12f   omega2 = %.12f"), th1, th2);
                 if (wcscmp(t, g_lastTitle) != 0) {
                     wcsncpy(g_lastTitle, t, 199);
                     g_lastTitle[199] = 0;
@@ -1764,7 +1764,7 @@ static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
                 }
             } else if (g_lastTitle[0]) {
                 g_lastTitle[0] = 0;
-                SetWindowTextW(hwnd, L"双摆混沌地图");
+                SetWindowTextW(hwnd, UI(L"双摆混沌地图", L"ChaosMap"));
             }
         }
         return 0;
@@ -1830,14 +1830,14 @@ static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
         SendMessageW(g_prog, PBM_SETPOS, 100, 0);
         double el = (GetTickCount() - g_startTick) / 1000.0;
         WCHAR buf[160];
-        swprintf(buf, 160, L"完成 %.1fs · 框选放大 · Z返回 · 双击看摆", el);
+        swprintf(buf, 160, UI(L"完成 %.1fs · 框选放大 · Z返回 · 双击看摆", L"Done %.1fs | drag=zoom | Z=back | dblclick"), el);
         SetWindowTextW(g_status, buf);
         InvalidateRect(hwnd, NULL, FALSE);
         return 0;
     }
     case WM_APP_CANCELED:
         g_computing = 0;
-        SetWindowTextW(g_status, L"已取消");
+        SetWindowTextW(g_status, UI(L"已取消", L"Cancelled"));
         return 0;
 
     case WM_DESTROY:
@@ -1909,9 +1909,9 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hPrev, PWSTR cmd, int show)
     if (gpuOk) {
         char dn[256];
         gpu_device_name(dn, sizeof(dn));
-        swprintf(title, 256, L"双摆混沌地图");
+        swprintf(title, 256, UI(L"双摆混沌地图", L"ChaosMap"));
     } else {
-        swprintf(title, 256, L"双摆混沌地图 — CPU（GPU 不可用）");
+        swprintf(title, 256, UI(L"双摆混沌地图 — CPU（GPU 不可用）", L"ChaosMap - CPU (GPU unavailable)"));
     }
 
     HWND hwnd = CreateWindowExW(0, L"ChaosMapMain", title,

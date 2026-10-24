@@ -644,23 +644,23 @@ static void pend_paint(HWND hwnd, PendView *pv, HDC hdc)
     SetTextColor(mem, RGB(210, 215, 225));
     WCHAR buf[256];
     const double e0 = energy(&pv->s);
-    swprintf(buf, 256, L"t = %.2f s    倍速 %.2fx   %s",
-             pv->t, pv->speed, pv->paused ? L"[暂停]" : L"");
+    swprintf(buf, 256, UI(L"t = %.2f s    倍速 %.2fx   %s", L"t = %.2f s    speed %.2fx   %s"),
+             pv->t, pv->speed, pv->paused ? UI(L"[暂停]", L"[paused]") : L"");
     TextOutW(mem, 16, 12, buf, (int)wcslen(buf));
 
-    swprintf(buf, 256, L"θ1 = %.4f    θ2 = %.4f  (已折到 -π~π)",
+    swprintf(buf, 256, UI(L"θ1 = %.4f    θ2 = %.4f  (已折到 -π~π)", L"theta1 = %.4f   theta2 = %.4f  (wrapped)"),
              wrap_angle(pv->s.th1), wrap_angle(pv->s.th2));
     TextOutW(mem, 16, 34, buf, (int)wcslen(buf));
 
     if (g_au.running || g_au.info > 0) {
-        const WCHAR *st = (g_au.info == 1) ? L"周期解" :
-                          (g_au.info == 2) ? L"准周期" :
-                          (g_au.info == 3) ? L"混沌" : L"采样中";
+        const WCHAR *st = (g_au.info == 1) ? UI(L"周期解", L"periodic") :
+                          (g_au.info == 2) ? UI(L"准周期", L"quasi-periodic") :
+                          (g_au.info == 3) ? UI(L"混沌", L"chaotic") : UI(L"采样中", L"sampling");
         if (g_au.mode)
-            swprintf(buf, 256, L"音频 %s  周期循环  %s 周期%.2fs  %dHz", 
+            swprintf(buf, 256, UI(L"音频 %s  周期循环  %s 周期%.2fs  %dHz", L"Audio %s  periodic  %s  T=%.2fs  %dHz"), 
                      g_au.running ? L"▶" : L"■", st, g_au.period, (int)g_au.pitch);
         else
-            swprintf(buf, 256, L"音频 %s  实时流式  %s 周期%.2fs  ×%.0f", 
+            swprintf(buf, 256, UI(L"音频 %s  实时流式  %s 周期%.2fs  ×%.0f", L"Audio %s  live  %s  T=%.2fs  x%.0f"), 
                      g_au.running ? L"▶" : L"■", st, g_au.period, g_sndSpeed);
         SetTextColor(mem, g_au.running ? RGB(120, 220, 160) : RGB(150, 160, 180));
         TextOutW(mem, 16, 56, buf, (int)wcslen(buf));
@@ -782,9 +782,9 @@ static void pend_paint(HWND hwnd, PendView *pv, HDC hdc)
             int each = (wh - 8) / 2;
             int nshow = (int)(SCOPE_SEC * SND_HZ);
             draw_wave(mem, gx, wy0, side, each, pv->sndL, pv->sndHead, pv->sndCount,
-                      nshow, RGB(255, 170, 60), pv->space ? L"x(t) = ω1" : L"x(t) = θ1");
+                      nshow, RGB(255, 170, 60), pv->space ? UI(L"x(t) = ω1", L"x(t) = w1") : UI(L"x(t) = θ1", L"x(t) = w1"));
             draw_wave(mem, gx, wy0 + each + 8, side, each, pv->sndR, pv->sndHead, pv->sndCount,
-                      nshow, RGB(120, 200, 255), pv->space ? L"y(t) = ω2" : L"y(t) = θ2");
+                      nshow, RGB(120, 200, 255), pv->space ? UI(L"y(t) = ω2", L"y(t) = w2") : UI(L"y(t) = θ2", L"y(t) = w2"));
         }
     }
     if (pv->space == 0) TextOutW(mem, gx + side - 20, gy + 2, L"π", 1);
@@ -793,14 +793,14 @@ static void pend_paint(HWND hwnd, PendView *pv, HDC hdc)
     /* 左下信息 */
     SetTextColor(mem, RGB(210, 215, 225));
     if (pv->space == 0)
-        swprintf(buf, 256, L"初始 (θ1, θ2) = (%.5f, %.5f)    (ω1, ω2) = (%.5f, %.5f)",
+        swprintf(buf, 256, UI(L"初始 (θ1, θ2) = (%.5f, %.5f)    (ω1, ω2) = (%.5f, %.5f)", L"Initial angles (%.5f, %.5f)  ang.vel (%.5f, %.5f)"),
                  wrap_angle(pv->th1_0), wrap_angle(pv->th2_0), pv->w1_0, pv->w2_0);
     else
-        swprintf(buf, 256, L"初始 (θ1, θ2) = (0, 0)    (ω1, ω2) = (%.5f, %.5f)",
+        swprintf(buf, 256, UI(L"初始 (θ1, θ2) = (0, 0)    (ω1, ω2) = (%.5f, %.5f)", L"Initial angles (0, 0)  ang.vel (%.5f, %.5f)"),
                  pv->w1_0, pv->w2_0);
     TextOutW(mem, 16, ch - 52, buf, (int)wcslen(buf));
 
-    swprintf(buf, 256, L"空格暂停  ↑↓调速  ←→回看  R重置  P播放  M模式  []倍率  T导出   E = %.6f", e0);
+    swprintf(buf, 256, UI(L"空格暂停  ↑↓调速  ←→回看  R重置  P播放  M模式  []倍率  T导出   E = %.6f", L"Space pause  Up/Dn speed  L/R rewind  R reset  P play  M mode  [] ratio  T export   E = %.6f"), e0);
     TextOutW(mem, 16, ch - 28, buf, (int)wcslen(buf));
 
     OP("paint:blt");
@@ -826,7 +826,7 @@ static void pend_paint(HWND hwnd, PendView *pv, HDC hdc)
         g_audioBtn = rb;
         SetBkMode(hdc, TRANSPARENT);
         SetTextColor(hdc, RGB(190, 230, 255));
-        DrawTextW(hdc, L"保存声音", -1, &rb,
+        DrawTextW(hdc, UI(L"保存声音", L"Save audio"), -1, &rb,
                   DT_CENTER | DT_VCENTER | DT_SINGLELINE);
     }
 
@@ -934,7 +934,7 @@ LRESULT CALLBACK PendWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             else {
                 audio_make_table(pv);
                 if (audio_start(pv) != 0)
-                    MessageBoxW(hwnd, L"无法打开音频设备", L"播放失败", MB_OK);
+                    MessageBoxW(hwnd, UI(L"无法打开音频设备", L"Cannot open audio device"), UI(L"播放失败", L"Playback failed"), MB_OK);
             }
             InvalidateRect(hwnd, NULL, FALSE);
         }
@@ -944,7 +944,7 @@ LRESULT CALLBACK PendWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             g_au.mode = !g_au.mode;
             audio_make_table(pv);
             if (was && audio_start(pv) != 0)
-                MessageBoxW(hwnd, L"无法打开音频设备", L"播放失败", MB_OK);
+                MessageBoxW(hwnd, UI(L"无法打开音频设备", L"Cannot open audio device"), UI(L"播放失败", L"Playback failed"), MB_OK);
             InvalidateRect(hwnd, NULL, FALSE);
         }
         else if (wParam == VK_OEM_4 || wParam == VK_OEM_MINUS) {
@@ -1010,9 +1010,9 @@ void open_pendulum_window(double th1, double th2)
 
     WCHAR title[128];
     if (pv->space == 0)
-        swprintf(title, 128, L"双摆  θ1=%.4f  θ2=%.4f", wrap_angle(pv->th1_0), wrap_angle(pv->th2_0));
+        swprintf(title, 128, UI(L"双摆  θ1=%.4f  θ2=%.4f", L"Pendulum  theta1=%.4f  theta2=%.4f"), wrap_angle(pv->th1_0), wrap_angle(pv->th2_0));
     else
-        swprintf(title, 128, L"双摆  ω1=%.4f  ω2=%.4f", pv->w1_0, pv->w2_0);
+        swprintf(title, 128, UI(L"双摆  ω1=%.4f  ω2=%.4f", L"Pendulum  omega1=%.4f  omega2=%.4f"), pv->w1_0, pv->w2_0);
 
     HWND h = CreateWindowExW(0, PEND_CLASS, title,
                              WS_OVERLAPPEDWINDOW | WS_VISIBLE,
@@ -1091,7 +1091,7 @@ static void export_audio(HWND owner, double th1, double th2, double w1, double w
     if (NT > 20000000L) NT = 20000000L;
 
     short *buf = (short *)calloc((size_t)NS * 2, sizeof(short));
-    if (!buf) { MessageBoxW(owner, L"内存不足", L"保存失败", MB_OK); return; }
+    if (!buf) { MessageBoxW(owner, UI(L"内存不足", L"Out of memory"), UI(L"保存失败", L"Save failed"), MB_OK); return; }
 
     State s = { th1, w1, th2, w2 };
     double prev1 = s.th1, prev2 = s.th2, uw1 = 0.0, uw2 = 0.0;
@@ -1126,7 +1126,7 @@ static void export_audio(HWND owner, double th1, double th2, double w1, double w
 
     /* 写 16bit 立体声 WAV */
     FILE *f = _wfopen(wavPath, L"wb");
-    if (!f) { free(buf); MessageBoxW(owner, L"无法写入临时文件", L"保存失败", MB_OK); return; }
+    if (!f) { free(buf); MessageBoxW(owner, UI(L"无法写入临时文件", L"Cannot write temp file"), UI(L"保存失败", L"Save failed"), MB_OK); return; }
     DWORD dataBytes = (DWORD)(NS * 2 * sizeof(short));
     DWORD riffSize = 36 + dataBytes;
     WORD  fmt = 1, ch = 2, bits = 16;
@@ -1174,15 +1174,15 @@ static void export_audio(HWND owner, double th1, double th2, double w1, double w
         DeleteFileW(wavPath);
         swprintf(msg, 512, L"已保存 10 秒音频（OGG）\n%d 秒音频 = %.0f 秒物理轨迹\n初始状态已写入文件注释\n\n%s",
                  SEC, phys, oggPath);
-        MessageBoxW(owner, msg, L"保存成功", MB_OK | MB_ICONINFORMATION);
+        MessageBoxW(owner, msg, UI(L"保存成功", L"Saved"), MB_OK | MB_ICONINFORMATION);
     } else {
         /* 找不到 ffmpeg：保留未压缩的 WAV，至少能用 */
         WCHAR wavDst[MAX_PATH];
         swprintf(wavDst, MAX_PATH, L"%s\\pendulum_audio.wav", dir);
         MoveFileExW(wavPath, wavDst, MOVEFILE_REPLACE_EXISTING);
         swprintf(msg, 512, L"未找到 ffmpeg，已保存为 WAV（未压缩）\n\n%s\n\n"
-                 L"安装 ffmpeg 后可转 OGG：winget install Gyan.FFmpeg", wavDst);
-        MessageBoxW(owner, msg, L"已保存（WAV）", MB_OK | MB_ICONINFORMATION);
+                 UI(L"安装 ffmpeg 后可转 OGG：winget install Gyan.FFmpeg", L"Install ffmpeg for OGG: winget install Gyan.FFmpeg"), wavDst);
+        MessageBoxW(owner, msg, UI(L"已保存（WAV）", L"Saved (WAV)"), MB_OK | MB_ICONINFORMATION);
     }
 }
 
@@ -1192,7 +1192,7 @@ static void export_trajectory(HWND owner, double th1, double th2, double w1, dou
     const int NS = (int)(TT / SAMPLE + 0.5) + 1;
     double *px = (double *)malloc(sizeof(double) * (size_t)NS);
     double *py = (double *)malloc(sizeof(double) * (size_t)NS);
-    if (!px || !py) { free(px); free(py); MessageBoxW(owner, L"内存不足", L"错误", MB_OK); return; }
+    if (!px || !py) { free(px); free(py); MessageBoxW(owner, UI(L"内存不足", L"Out of memory"), UI(L"错误", L"Error"), MB_OK); return; }
 
     State s;
     s.th1 = th1; s.w1 = w1; s.th2 = th2; s.w2 = w2;
@@ -1237,7 +1237,7 @@ static void export_trajectory(HWND owner, double th1, double th2, double w1, dou
         if (oldbm) SelectObject(mem, oldbm);
         DeleteDC(mem);
         free(px); free(py);
-        MessageBoxW(owner, L"创建位图失败", L"错误", MB_OK);
+        MessageBoxW(owner, UI(L"创建位图失败", L"Bitmap creation failed"), UI(L"错误", L"Error"), MB_OK);
         return;
     }
 
@@ -1341,13 +1341,13 @@ static void export_trajectory(HWND owner, double th1, double th2, double w1, dou
 
     const int RX = 1130;
     HFONT fT = CreateFontW(22, 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET,
-                           0, 0, CLEARTYPE_QUALITY, 0, L"微软雅黑");
+                           0, 0, CLEARTYPE_QUALITY, 0, UI(L"微软雅黑", L"Segoe UI"));
     HFONT fM = CreateFontW(15, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET,
                            0, 0, CLEARTYPE_QUALITY, 0, L"Consolas");
     SetBkMode(mem, TRANSPARENT);
     SetTextColor(mem, RGB(120, 200, 255));
     HGDIOBJ of = SelectObject(mem, fT);
-    TextOutW(mem, RX, 34, L"双摆轨迹", 4);
+    TextOutW(mem, RX, 34, UI(L"双摆轨迹", L"Double pendulum trajectory"), 4);
     SetTextColor(mem, RGB(110, 130, 160));
     SelectObject(mem, fM);
     TextOutW(mem, RX, 64, L"t = 0 ~ 60 s", 12);
@@ -1355,7 +1355,7 @@ static void export_trajectory(HWND owner, double th1, double th2, double w1, dou
     WCHAR buf[2048];
     int y = 110;
     SetTextColor(mem, RGB(90, 110, 140));
-    TextOutW(mem, RX, y, L"-- 初始状态 (t=0) --", (int)wcslen(L"-- 初始状态 (t=0) --")); y += 24;
+    TextOutW(mem, RX, y, UI(L"-- 初始状态 (t=0) --", L"-- Initial state (t=0) --"), (int)wcslen(UI(L"-- 初始状态 (t=0) --", L"-- Initial state (t=0) --"))); y += 24;
     SetTextColor(mem, RGB(210, 225, 245));
     swprintf(buf, 2048, L"th1 = %+.12f", th1); TextOutW(mem, RX, y, buf, (int)wcslen(buf)); y += 20;
     swprintf(buf, 2048, L"th2 = %+.12f", th2); TextOutW(mem, RX, y, buf, (int)wcslen(buf)); y += 20;
@@ -1363,7 +1363,7 @@ static void export_trajectory(HWND owner, double th1, double th2, double w1, dou
     swprintf(buf, 2048, L"w2  = %+.12f", w2);  TextOutW(mem, RX, y, buf, (int)wcslen(buf)); y += 30;
 
     SetTextColor(mem, RGB(90, 110, 140));
-    TextOutW(mem, RX, y, L"-- 物理参数 --", (int)wcslen(L"-- 物理参数 --")); y += 24;
+    TextOutW(mem, RX, y, UI(L"-- 物理参数 --", L"-- Physical parameters --"), (int)wcslen(UI(L"-- 物理参数 --", L"-- Physical parameters --"))); y += 24;
     SetTextColor(mem, RGB(210, 225, 245));
     swprintf(buf, 2048, L"m1 = %.12f", g_phys.m1); TextOutW(mem, RX, y, buf, (int)wcslen(buf)); y += 20;
     swprintf(buf, 2048, L"m2 = %.12f", g_phys.m2); TextOutW(mem, RX, y, buf, (int)wcslen(buf)); y += 20;
@@ -1372,7 +1372,7 @@ static void export_trajectory(HWND owner, double th1, double th2, double w1, dou
     swprintf(buf, 2048, L"g  = %.12f", g_phys.g);  TextOutW(mem, RX, y, buf, (int)wcslen(buf)); y += 30;
 
     SetTextColor(mem, RGB(90, 110, 140));
-    TextOutW(mem, RX, y, L"-- 积分设置 --", (int)wcslen(L"-- 积分设置 --")); y += 24;
+    TextOutW(mem, RX, y, UI(L"-- 积分设置 --", L"-- Integration --"), (int)wcslen(UI(L"-- 积分设置 --", L"-- Integration --"))); y += 24;
     SetTextColor(mem, RGB(210, 225, 245));
     TextOutW(mem, RX, y, L"RK4, fixed step", (int)wcslen(L"RK4, fixed step")); y += 20;
     swprintf(buf, 2048, L"h    = %.12f", HSTEP);  TextOutW(mem, RX, y, buf, (int)wcslen(buf)); y += 20;
@@ -1383,17 +1383,17 @@ static void export_trajectory(HWND owner, double th1, double th2, double w1, dou
     SetTextColor(mem, RGB(90, 110, 140));
     y += 12;
     SetTextColor(mem, RGB(120, 200, 255));
-    TextOutW(mem, RX, y, L"-- 图上标记 --", (int)wcslen(L"-- 图上标记 --")); y += 24;
+    TextOutW(mem, RX, y, UI(L"-- 图上标记 --", L"-- Markers --"), (int)wcslen(UI(L"-- 图上标记 --", L"-- Markers --"))); y += 24;
     SetTextColor(mem, RGB(235, 60, 60));
-    TextOutW(mem, RX, y, L"● 红点：t=0 的末端位置", (int)wcslen(L"● 红点：t=0 的末端位置")); y += 22;
+    TextOutW(mem, RX, y, UI(L"● 红点：t=0 的末端位置", L"o red dot: tip position at t=0"), (int)wcslen(UI(L"● 红点：t=0 的末端位置", L"o red dot: tip position at t=0"))); y += 22;
     SetTextColor(mem, RGB(60, 220, 110));
-    TextOutW(mem, RX, y, L"● 绿点：t=60s 的末端位置", (int)wcslen(L"● 绿点：t=60s 的末端位置")); y += 22;
+    TextOutW(mem, RX, y, UI(L"● 绿点：t=60s 的末端位置", L"o green dot: tip position at t=60s"), (int)wcslen(UI(L"● 绿点：t=60s 的末端位置", L"o green dot: tip position at t=60s"))); y += 22;
     SetTextColor(mem, RGB(235, 60, 60));
-    TextOutW(mem, RX, y, L"→ 红箭头：t=0 末端速度方向", (int)wcslen(L"→ 红箭头：t=0 末端速度方向")); y += 22;
+    TextOutW(mem, RX, y, UI(L"→ 红箭头：t=0 末端速度方向", L"-> red: tip velocity at t=0"), (int)wcslen(UI(L"→ 红箭头：t=0 末端速度方向", L"-> red: tip velocity at t=0"))); y += 22;
     SetTextColor(mem, RGB(60, 220, 110));
-    TextOutW(mem, RX, y, L"→ 绿箭头：t=60s 末端速度方向", (int)wcslen(L"→ 绿箭头：t=60s 末端速度方向")); y += 22;
+    TextOutW(mem, RX, y, UI(L"→ 绿箭头：t=60s 末端速度方向", L"-> green: tip velocity at t=60s"), (int)wcslen(UI(L"→ 绿箭头：t=60s 末端速度方向", L"-> green: tip velocity at t=60s"))); y += 22;
     SetTextColor(mem, RGB(110, 130, 160));
-    TextOutW(mem, RX, y, L"-- 能量 --", (int)wcslen(L"-- 能量 --")); y += 24;
+    TextOutW(mem, RX, y, UI(L"-- 能量 --", L"-- Energy --"), (int)wcslen(UI(L"-- 能量 --", L"-- Energy --"))); y += 24;
     SetTextColor(mem, RGB(210, 225, 245));
     swprintf(buf, 2048, L"E(0)  = %.12f", e0); TextOutW(mem, RX, y, buf, (int)wcslen(buf)); y += 20;
     swprintf(buf, 2048, L"E(60) = %.12f", e1); TextOutW(mem, RX, y, buf, (int)wcslen(buf)); y += 20;
@@ -1425,9 +1425,9 @@ static void export_trajectory(HWND owner, double th1, double th2, double w1, dou
         if (save_png_rgb(path, CW, CH, rgb) == 0) {
             WCHAR msg[MAX_PATH + 120];
             swprintf(msg, MAX_PATH + 120, L"Trajectory saved:\n%s", path);
-            MessageBoxW(owner, msg, L"导出成功", MB_OK | MB_ICONINFORMATION);
+            MessageBoxW(owner, msg, UI(L"导出成功", L"Export done"), MB_OK | MB_ICONINFORMATION);
         } else {
-            MessageBoxW(owner, L"PNG 编码失败。", L"错误", MB_OK | MB_ICONERROR);
+            MessageBoxW(owner, UI(L"PNG 编码失败。", L"PNG encoding failed."), UI(L"错误", L"Error"), MB_OK | MB_ICONERROR);
         }
         free(rgb);
     }
