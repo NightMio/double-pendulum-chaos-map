@@ -10,6 +10,10 @@ Double-click anywhere to open that pendulum live, watch its phase portrait, and 
 
 ![pendulum window](docs/screenshot-pendulum.png)
 
+Press `T` to export the first 60 seconds of the trajectory as a figure, with the complete initial state (12 decimals), physics parameters, integrator settings and energy drift listed on the right:
+
+![trajectory export](docs/screenshot-3.png)
+
 ## Features
 
 - **OpenCL acceleration** — a 1200×1200 λ field in ≈0.7 s (vs 143 s for the 20-thread CPU version)
