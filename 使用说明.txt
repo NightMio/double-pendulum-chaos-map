@@ -65,11 +65,12 @@ ChaosMap - User Guide
   [ ]         调整倍率或音高      Speed ratio or pitch
   T           导出 60 秒轨迹图     Export 60 s trajectory image
   Ctrl+S      同上                Same as T
-  Ctrl+O      导出 10 秒音频       Export 10 s audio
+  A           导出 10 秒音频       Export 10 s audio
+  Ctrl+O      同上                Same as A
   Esc         关闭窗口            Close window
 
-  右下角「保存声音」按钮 = 导出 10 秒音频（Ctrl+O）
-  Bottom-right "Save audio" button = export 10 s audio
+  右下角「保存声音」按钮 = 导出 10 秒音频（A 键）
+  Bottom-right "Save audio" button = export 10 s audio (key A)
 
 
 【两种参数空间 / Two parameter spaces】

@@ -66,7 +66,7 @@ Both start maximized and begin computing immediately.
 | `M` | Audio mode: live stream / periodic loop |
 | `[` / `]` | Speed ratio or pitch |
 | `T` / `Ctrl+S` | Export 60 s trajectory figure |
-| `Ctrl+O` | Export 10 s audio |
+| `A` / `Ctrl+O` | Export 10 s audio |
 | `Esc` | Close |
 
 ## How it works

@@ -800,7 +800,7 @@ static void pend_paint(HWND hwnd, PendView *pv, HDC hdc)
                  pv->w1_0, pv->w2_0);
     TextOutW(mem, 16, ch - 52, buf, (int)wcslen(buf));
 
-    swprintf(buf, 256, UI(L"空格暂停  ↑↓调速  ←→回看  R重置  P播放  M模式  []倍率  T导出   E = %.6f", L"Space pause  Up/Dn speed  L/R rewind  R reset  P play  M mode  [] ratio  T export   E = %.6f"), e0);
+    swprintf(buf, 256, UI(L"空格暂停  ↑↓调速  ←→回看  R重置  P播放  M模式  []倍率  T轨迹  A音频   E = %.6f", L"Space pause  Up/Dn  L/R rewind  R reset  P play  M mode  [] ratio  T traj  A audio   E = %.6f"), e0);
     TextOutW(mem, 16, ch - 28, buf, (int)wcslen(buf));
 
     OP("paint:blt");
@@ -909,6 +909,10 @@ LRESULT CALLBACK PendWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         if (!pv) return 0;
         if (wParam == 'T' || (wParam == 'S' && (GetKeyState(VK_CONTROL) & 0x8000))) {
             export_trajectory(hwnd, pv->th1_0, pv->th2_0, pv->w1_0, pv->w2_0);
+            return 0;
+        }
+        if (wParam == 'A' || (wParam == 'O' && (GetKeyState(VK_CONTROL) & 0x8000))) {
+            export_audio(hwnd, pv->th1_0, pv->th2_0, pv->w1_0, pv->w2_0);
             return 0;
         }
         if (wParam == VK_SPACE) { pv->paused = !pv->paused; if (!pv->paused) pv->cursor = -1; InvalidateRect(hwnd, NULL, FALSE); }
@@ -1142,17 +1146,25 @@ static void export_audio(HWND owner, double th1, double th2, double w1, double w
     fclose(f);
     free(buf);
 
+    /* 先找 exe 同目录的 ffmpeg.exe，找不到再交给 PATH */
+    WCHAR self[MAX_PATH], exeDir[MAX_PATH], ffPath[MAX_PATH];
+    GetModuleFileNameW(NULL, self, MAX_PATH);
+    WCHAR *slash = wcsrchr(self, L'\\');
+    if (slash) { *slash = 0; wcscpy(exeDir, self); } else { wcscpy(exeDir, L"."); }
+    swprintf(ffPath, MAX_PATH, L"%s\\ffmpeg.exe", exeDir);
+    if (GetFileAttributesW(ffPath) == INVALID_FILE_ATTRIBUTES) wcscpy(ffPath, L"ffmpeg");
+
     /* 调用 ffmpeg 转 OGG Vorbis，并把初始状态写进注释 */
     WCHAR cmd[2048];
     swprintf(cmd, 2048,
-        L"ffmpeg -y -loglevel error -i \"%s\" -c:a libvorbis -q:a 5 "
+        L"\"%s\" -y -loglevel error -i \"%s\" -c:a libvorbis -q:a 5 "
         L"-metadata \"CHAOS_TH1=%.12f\" -metadata \"CHAOS_TH2=%.12f\" "
         L"-metadata \"CHAOS_W1=%.12f\" -metadata \"CHAOS_W2=%.12f\" "
         L"-metadata \"CHAOS_M1=%.12f\" -metadata \"CHAOS_M2=%.12f\" "
         L"-metadata \"CHAOS_L1=%.12f\" -metadata \"CHAOS_L2=%.12f\" "
         L"-metadata \"CHAOS_G=%.12f\" -metadata \"CHAOS_SPACE=%d\" "
         L"-metadata \"CHAOS_SPEED=%.3f\" \"%s\"",
-        wavPath, th1, th2, w1, w2, g_phys.m1, g_phys.m2,
+        ffPath, wavPath, th1, th2, w1, w2, g_phys.m1, g_phys.m2,
         g_phys.l1, g_phys.l2, g_phys.g, g_phys.space, g_sndSpeed, oggPath);
 
     STARTUPINFOW si; PROCESS_INFORMATION pi;
